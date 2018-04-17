@@ -1,5 +1,6 @@
 package io.block16.generator;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -20,6 +21,7 @@ public class GeneratorController {
     private final RabbitTemplate rabbitTemplate;
     private final RedisTemplate<String, Object> redisTemplate;
     private final ValueOperations<String, Object> valueOperations;
+    private final ObjectMapper objectMapper;
     private final Web3j web3j;
     private int addedUpto;
 
@@ -37,6 +39,8 @@ public class GeneratorController {
 
         int lastBlockNum = this.valueOperations.get(processedBlockKey) != null ? (Integer) this.valueOperations.get(processedBlockKey) : -1;
         this.addedUpto = lastBlockNum;
+
+        this.objectMapper = new ObjectMapper();
     }
     /**
      * Check for blocks to add to the queue every 5 seconds.
@@ -52,7 +56,7 @@ public class GeneratorController {
                 for(int i = this.addedUpto + 1; i < ethBlockNumber.getBlockNumber().intValue() - 1; i++) {
                     BlockWorkDto blockWorkDto = new BlockWorkDto();
                     blockWorkDto.setBlockNumber(i);
-                    this.rabbitTemplate.convertAndSend();
+                    this.rabbitTemplate.convertAndSend(RabbitConfig.BLOCK_WORK_EXCHANGE, RabbitConfig.BLOCK_ROUTING_KEY, objectMapper.writeValueAsString(blockWorkDto));
                     this.addedUpto = i;
                 }
             }

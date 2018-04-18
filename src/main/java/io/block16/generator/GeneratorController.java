@@ -60,6 +60,8 @@ public class GeneratorController {
                     this.addedUpto = i;
                 }
             }
+
+            this.valueOperations.set(processedBlockKey, this.addedUpto);
         } catch (IOException ex) {
             LOGGER.error("Could not get lastest block number from the node: " + ex.getMessage());
             ex.printStackTrace();

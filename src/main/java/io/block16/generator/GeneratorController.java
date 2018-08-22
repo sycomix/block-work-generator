@@ -8,6 +8,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.methods.response.EthBlockNumber;
@@ -18,9 +21,12 @@ import java.io.IOException;
 public class GeneratorController {
     private final Logger LOGGER = LoggerFactory.getLogger(this.getClass());
     private static String processedBlockKey = "listener::ListenerService::latestBlockProcessed";
+    private static String updateBlockKey = "listener::ListenerService::updateBlockPosition";
+
     private final RabbitTemplate rabbitTemplate;
     private final RedisTemplate<String, Object> redisTemplate;
     private final ValueOperations<String, Object> valueOperations;
+
     private final ObjectMapper objectMapper;
     private final Web3j web3j;
     private int addedUpto;
@@ -37,11 +43,30 @@ public class GeneratorController {
         this.valueOperations = this.redisTemplate.opsForValue();
         this.web3j = web3j;
 
-        int lastBlockNum = this.valueOperations.get(processedBlockKey) != null ? (Integer) this.valueOperations.get(processedBlockKey) : -1;
-        this.addedUpto = lastBlockNum;
+        this.addedUpto = this.valueOperations.get(processedBlockKey) != null ? (Integer) this.valueOperations.get(processedBlockKey) : -1;;
 
         this.objectMapper = new ObjectMapper();
     }
+
+    @Scheduled(fixedDelay = 10000)
+    private void setUpdateBlocksToScan() {
+        try {
+            int current = this.valueOperations.get(updateBlockKey) != null ? (Integer) this.valueOperations.get(updateBlockKey) : 0;
+            // Only do this if the value has changed
+            if (current > 0) {
+                for (int i = current; i > 0; i--) {
+                    BlockWorkDto blockWorkDto = new BlockWorkDto();
+                    blockWorkDto.setBlockNumber(i);
+                    this.rabbitTemplate.convertAndSend(RabbitConfig.UPDATE_BLOCK_EXCHANGE, RabbitConfig.UPDATE_ROUTING_KEY, objectMapper.writeValueAsString(blockWorkDto));
+                    this.valueOperations.set(updateBlockKey, i);
+                }
+            }
+        } catch (Exception e) {
+            LOGGER.error("Could not add number to the rabbit server: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
     /**
      * Check for blocks to add to the queue every 5 seconds.
      * FixedDelay waits a delay until the previous invocation finishes
@@ -65,6 +90,15 @@ public class GeneratorController {
             LOGGER.error("Could not get lastest block number from the node: " + ex.getMessage());
             ex.printStackTrace();
         }
+    }
+
+    @GetMapping(path = "/update/{fromBlock}")
+    public String setUpdateBlocks(@PathVariable Integer fromBlock) {
+        if (fromBlock == null) {
+            return "DID NOT SET\n";
+        }
+        this.valueOperations.set(updateBlockKey, fromBlock);
+        return "SET\n";
     }
 
 }

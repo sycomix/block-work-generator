@@ -15,6 +15,10 @@ public class RabbitConfig {
     public static String BLOCK_WORK_QUEUE_NAME = "listener.block.queue";
     public static String BLOCK_ROUTING_KEY = "";
 
+    public static String UPDATE_BLOCK_EXCHANGE = "listener.update.exchange";
+    public static String UPDATE_BLOCK_QUEUE = "listener.update.queue";
+    public static String UPDATE_ROUTING_KEY = "";
+
     @Value("${amqp.port:5672}")
     private int port = 5672;
 
@@ -40,11 +44,6 @@ public class RabbitConfig {
         return connectionFactory;
     }
 
-    @Bean
-    public DirectExchange blockWorkExchange() {
-        return new DirectExchange(BLOCK_WORK_EXCHANGE, true, false);
-    }
-
     /**
      * @return the admin bean that can declare queues etc.
      */
@@ -56,32 +55,30 @@ public class RabbitConfig {
     }
 
     @Bean
-    public Queue queue() {
+    public DirectExchange blockWorkExchange() {
+        return new DirectExchange(BLOCK_WORK_EXCHANGE, true, false);
+    }
+
+    @Bean
+    public DirectExchange updateWorkExchange() { return new DirectExchange(UPDATE_BLOCK_EXCHANGE, true, false); }
+
+    @Bean
+    public Queue blockWorkQueue() {
         return new Queue(BLOCK_WORK_QUEUE_NAME);
     }
 
     @Bean
-    public Binding binding() {
-        return BindingBuilder.bind(queue()).to(blockWorkExchange()).with(BLOCK_ROUTING_KEY);
-    }
-
-    /*
-    @Bean
-    public AmqpLogMessageListener messageListener() {
-        return new AmqpLogMessageListener();
+    public Queue updateQueue() {
+        return new Queue(UPDATE_BLOCK_QUEUE);
     }
 
     @Bean
-    public SimpleMessageListenerContainer listenerContainer() {
-        SimpleMessageListenerContainer container = new SimpleMessageListenerContainer();
-        container.setConnectionFactory(connectionFactory());
-        container.setQueueNames(BLOCK_WORK_QUEUE_NAME);
-
-        MessageListenerAdapter listenerAdapter = new MessageListenerAdapter(messageListener(), new AmqpLogMessageConverter());
-        listenerAdapter.setDefaultListenerMethod("handleLog");
-
-        container.setMessageListener(listenerAdapter);
-        return container;
+    public Binding blockBinding() {
+        return BindingBuilder.bind(blockWorkQueue()).to(blockWorkExchange()).with(BLOCK_ROUTING_KEY);
     }
-    */
+
+    @Bean
+    public Binding updateBinding() {
+        return BindingBuilder.bind(updateQueue()).to(updateWorkExchange()).with(UPDATE_ROUTING_KEY);
+    }
 }

@@ -11,7 +11,7 @@ redis:
 
 io:
   block16:
-    nodeLocation: http://localhost:8545
+    nodeLocation: https://mainnet.infura.io/rN9AdvkVRuc7HkkUJbnl
 
 amqp:
   host: localhost
@@ -26,7 +26,7 @@ redis:
 
 io:
   block16:
-    nodeLocation: https://mainnet.infura.io/mMVAl9ZCBbtZ4sc0fBbO
+    nodeLocation: https://mainnet.infura.io/rN9AdvkVRuc7HkkUJbnl
 
 ---
 
@@ -38,7 +38,7 @@ redis:
 
 io:
   block16:
-    nodeLocation: https://mainnet.infura.io/mMVAl9ZCBbtZ4sc0fBbO
+    nodeLocation: https://mainnet.infura.io/rN9AdvkVRuc7HkkUJbnl
 
 amqp:
   host: rabbit.block16.io

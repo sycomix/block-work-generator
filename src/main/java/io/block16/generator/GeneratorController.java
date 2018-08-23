@@ -1,6 +1,7 @@
 package io.block16.generator;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.util.concurrent.RateLimiter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -30,6 +31,8 @@ public class GeneratorController {
     private final Web3j web3j;
     private int addedUpto;
 
+    RateLimiter rateLimiter = RateLimiter.create(1000);
+
     @Autowired
     public GeneratorController(
             final RabbitTemplate rabbitTemplate,
@@ -54,6 +57,7 @@ public class GeneratorController {
             // Only do this if the value has changed
             if (current > 0) {
                 for (int i = current; i > 0; i--) {
+                    rateLimiter.acquire(1);
                     BlockWorkDto blockWorkDto = new BlockWorkDto();
                     blockWorkDto.setBlockNumber(i);
                     this.rabbitTemplate.convertAndSend(RabbitConfig.UPDATE_BLOCK_EXCHANGE, RabbitConfig.UPDATE_WORK_ROUTING_KEY, objectMapper.writeValueAsString(blockWorkDto));

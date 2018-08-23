@@ -31,6 +31,7 @@ dependencies {
 	compile('org.springframework.boot:spring-boot-starter-amqp')
     compile 'org.springframework.amqp:spring-rabbit'
 	compile('org.springframework.boot:spring-boot-starter-data-redis')
+    compile(group: 'com.google.guava', name: 'guava', version: '24.0-jre')
 	compile group: 'redis.clients', name: 'jedis', version: '2.9.0'
 	compileOnly('org.projectlombok:lombok')
 	testCompile('org.springframework.boot:spring-boot-starter-test')

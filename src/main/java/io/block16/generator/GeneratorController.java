@@ -45,7 +45,7 @@ public class GeneratorController {
         this.valueOperations = this.redisTemplate.opsForValue();
         this.web3j = web3j;
 
-        this.addedUpto = this.valueOperations.get(processedBlockKey) != null ? (Integer) this.valueOperations.get(processedBlockKey) : -1;;
+        this.addedUpto = this.valueOperations.get(processedBlockKey) != null ? (Integer) this.valueOperations.get(processedBlockKey) : -1;
 
         this.objectMapper = new ObjectMapper();
     }
@@ -74,17 +74,20 @@ public class GeneratorController {
     }
 
     /**
-     * Check for blocks to add to the queue every 5 seconds.
+     * Check for blocks to add to the queue every 3 seconds.
      * FixedDelay waits a delay until the previous invocation finishes
      */
     @Scheduled(fixedDelay = 3000)
     private void getBlocksToScan() {
         try {
             EthBlockNumber ethBlockNumber = this.web3j.ethBlockNumber().send();
+            LOGGER.info("Got blockNumber: " + ethBlockNumber.getBlockNumber().intValue());
 
             // Add all new blocks, up to the 2nd to last block
             if (this.addedUpto + 1 <= ethBlockNumber.getBlockNumber().intValue() - 1) {
+                LOGGER.info("At: " + this.addedUpto + " going to: " + (ethBlockNumber.getBlockNumber().intValue() - 1));
                 for(int i = this.addedUpto + 1; i < ethBlockNumber.getBlockNumber().intValue() - 1; i++) {
+                    rateLimiter.acquire(1);
                     BlockWorkDto blockWorkDto = new BlockWorkDto();
                     blockWorkDto.setBlockNumber(i);
                     this.rabbitTemplate.convertAndSend(RabbitConfig.BLOCK_WORK_EXCHANGE, RabbitConfig.BLOCK_ROUTING_KEY, objectMapper.writeValueAsString(blockWorkDto));

@@ -34,7 +34,7 @@ spring:
   profiles: prod
 
 redis:
-  hostname: redis.block16.io
+  hostname: redis.internal.block16
 
 io:
   block16:

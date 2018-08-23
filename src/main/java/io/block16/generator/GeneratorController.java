@@ -10,7 +10,6 @@ import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.methods.response.EthBlockNumber;
@@ -57,9 +56,12 @@ public class GeneratorController {
                 for (int i = current; i > 0; i--) {
                     BlockWorkDto blockWorkDto = new BlockWorkDto();
                     blockWorkDto.setBlockNumber(i);
-                    this.rabbitTemplate.convertAndSend(RabbitConfig.UPDATE_BLOCK_EXCHANGE, RabbitConfig.UPDATE_ROUTING_KEY, objectMapper.writeValueAsString(blockWorkDto));
-                    this.valueOperations.set(updateBlockKey, i);
+                    this.rabbitTemplate.convertAndSend(RabbitConfig.UPDATE_BLOCK_EXCHANGE, RabbitConfig.UPDATE_WORK_ROUTING_KEY, objectMapper.writeValueAsString(blockWorkDto));
+                    if (i % 100000 == 0) {
+                        this.valueOperations.set(updateBlockKey, i);
+                    }
                 }
+                this.valueOperations.set(updateBlockKey, 0);
             }
         } catch (Exception e) {
             LOGGER.error("Could not add number to the rabbit server: " + e.getMessage());

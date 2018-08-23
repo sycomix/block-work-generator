@@ -17,7 +17,7 @@ public class RabbitConfig {
 
     public static String UPDATE_BLOCK_EXCHANGE = "listener.update.exchange";
     public static String UPDATE_BLOCK_QUEUE = "listener.update.queue";
-    public static String UPDATE_ROUTING_KEY = "";
+    public static String UPDATE_WORK_ROUTING_KEY = "work";
 
     @Value("${amqp.port:5672}")
     private int port = 5672;
@@ -79,6 +79,6 @@ public class RabbitConfig {
 
     @Bean
     public Binding updateBinding() {
-        return BindingBuilder.bind(updateQueue()).to(updateWorkExchange()).with(UPDATE_ROUTING_KEY);
+        return BindingBuilder.bind(updateQueue()).to(updateWorkExchange()).with(UPDATE_WORK_ROUTING_KEY);
     }
 }
